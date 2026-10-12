@@ -44,8 +44,13 @@ BGE-M3 và `BAAI/bge-reranker-v2-m3` tải về và chạy trên GPU; index 140 
 (`BCTC.pdf`, Nghị định 13) là bản scan không có lớp chữ nên bị bỏ qua (không OCR). 50 answers sinh bằng
 `openai/gpt-oss-20b` qua Groq, cả 50 có `generation_mode=llm` và qua `validate_answers`. LLM evaluator dùng API
 miễn phí (Groq, Gemini) vì không thanh toán được OpenAI; bị giới hạn quota nên RAGAS phải chia nhiều lượt có cache.
-Nếu cài full NeMo chưa thành công, ghi lỗi thực tế: phần NeMo của Dương chưa thử cài; kết quả cài đặt và chạy
-của Trí xem mục INDIVIDUAL của Trí và `doc/LOCAL_SETUP.md`.
+Phase B/C live cuối được chạy trên máy Dương trong `.venv-guard` (Python 3.12.10, riêng với `.venv`):
+`nemoguardrails==0.10.0` cài bằng `--no-deps` cùng presidio-analyzer/anonymizer, spaCy `en_core_web_lg`, fastembed,
+langchain 0.2.x. **Annoy 1.17.3 không cài được** (không có wheel Windows, không có MSVC và ổ C: không đủ chỗ), nên
+`annoy` trong `.venv-guard` là **bản thay thế thuần Python do nhóm tự viết** (tìm kiếm chính xác bằng numpy, khoảng cách
+angular, đủ API NeMo dùng); file này không nằm trong repo. NeMo 0.10.0 khởi tạo và chạy self-check input/output thật với
+bản thay thế này, nhưng đó **không phải** cấu hình Annoy gốc mà lab yêu cầu. Python 3.12 cũng nằm ngoài phạm vi
+được tài liệu NeMo 0.10.0 hỗ trợ (tối đa 3.11). Cấu hình của Trí trên macOS Python 3.11.9 xem `doc/LOCAL_SETUP.md`.
 
 ## INDIVIDUAL
 
@@ -90,8 +95,9 @@ của Trí xem mục INDIVIDUAL của Trí và `doc/LOCAL_SETUP.md`.
 - Đã chuẩn bị code: pairwise JSON judge có validation, đổi thứ tự A/B và quy đổi scores,
   Cohen κ, thống kê bias; Presidio detect/redact, NeMo input/output theo quyết định rail,
   suite có short-circuit PII và latency đo hai input layers với hai warm-up thật.
-- Bằng chứng hiện tại: `src/phase_b_judge.py`, `src/phase_c_guard.py`, `doc/LOCAL_SETUP.md`;
-  chưa commit; artifact C live có nhưng chưa đạt, xem `doc/reports/guard_handoff.md`.
+- Bằng chứng hiện tại: `src/phase_b_judge.py`, `src/phase_c_guard.py`, `doc/LOCAL_SETUP.md`, commit `4237d9b`;
+  `artifacts/judge_results.json` và `artifacts/guard_results.json` (lượt chạy live cuối do Dương thực hiện, xem mục
+  "Cập nhật của người tích hợp" bên dưới), `doc/reports/bias_report.md`, `doc/reports/guard_handoff.md`.
 - Cách kiểm tra: Presidio engine thật detect/redact 4/4 PII attacks, không chặn 8/8
   clean inputs; cấu hình NeMo parse đạt. Phase C đã chạy live, kết quả và giới hạn ghi bên dưới.
 - Nội dung cần giải thích khi nghiệm thu: winner A/B khác nhãn binary 0/1; pass 2 phải đổi
@@ -105,6 +111,15 @@ của Trí xem mục INDIVIDUAL của Trí và `doc/LOCAL_SETUP.md`.
   Phase B live đã đủ dữ liệu đầu vào nhưng chưa chạy, chưa có κ/bias thực nghiệm.
 - AI hỗ trợ: Codex đọc tài liệu, cài môi trường, implement code B/C và chạy kiểm tra.
   Kiểm tra Presidio dùng engine thật, Phase C gọi API live. Thành viên cần tự review và giải thích code.
+
+**Cập nhật của người tích hợp (Dương), 12/10/2026:** vì OpenRouter free của Trí hết quota (50 lời gọi/ngày), Dương chạy
+lại Phase B/C live bằng Groq (`openai/gpt-oss-120b`) trên máy Dương, dùng nguyên code `phase_b_judge.py` và
+`phase_c_guard.py` của Trí (không sửa code B/C) và chỉ đổi `guardrails/config.yml` sang model/base_url của Groq.
+Kết quả thật: Phase C attacks 18/20, clean 8/8 được qua (false-positive rate 0), outputs 4/4 đúng, input guard
+sequential P95 = 3585.64ms (vượt budget 500ms; 20 mẫu timed, 2 warm-up); Phase B 5 cặp đều nhất quán sau khi đổi chỗ
+(position inconsistency 0/5), 10 nhãn binary trùng hoàn toàn với nhãn người, Cohen κ = 1.0. Phần "Giới hạn" ở trên là
+trạng thái trước lượt chạy này (batch OpenRouter lỗi); số liệu hiện hành nằm ở các artifact và báo cáo. Trí cần tự đọc
+lại phần này và các báo cáo, xác nhận mình giải thích được code và kết quả trước khi nộp.
 
 ## Cập nhật sau khi nộp
 

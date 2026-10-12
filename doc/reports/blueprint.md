@@ -2,17 +2,17 @@
 
 Nhóm: NoName
 
-Người phụ trách: Nguyễn Thanh Dương - 2A202602961 (số liệu guard do Ngô Minh Trí - 2A202602993 cung cấp
-trong `doc/reports/guard_handoff.md`)
+Người phụ trách: Nguyễn Thanh Dương - 2A202602961 (code Phase B/C do Ngô Minh Trí - 2A202602993 viết; lượt chạy
+live cuối của B/C do Dương thực hiện, xem `doc/reports/guard_handoff.md`)
 
 Đây là **đề xuất CI/CD**, không phải workflow đã được triển khai/chạy. Repo không có
 `.github/workflows` và chưa có job tự động nào chạy.
 Nguồn kết quả: artifacts/ragas_50q.json, judge_results.json, guard_results.json.
-Run timestamp: Phase A 2026-10-12T16:13:47Z; Phase C 2026-10-12T10:51:19Z; Phase B chưa có artifact.
-Guard models: `openrouter/free` (router của OpenRouter, backend thực tế có thể thay đổi giữa các lượt).
+Run timestamp: Phase A 2026-10-12T16:13:47Z; Phase C 2026-10-12T16:27:17Z; Phase B 2026-10-12T16:28:40Z.
+Guard models: `openai/gpt-oss-120b` (qua Groq, từ metadata.models.guard của guard_results.json).
 Models theo vai trò: generation `openai/gpt-oss-20b` (Groq, từ answers_50q.json); evaluator RAGAS
 `gemini-3.5-flash-lite` + `gemini-3.1-flash-lite` + embedding `BAAI/bge-m3` (từ ragas_50q.json);
-judge Phase B chưa chạy live nên chưa có model thực dùng; guard `openrouter/free`.
+judge Phase B `openai/gpt-oss-120b`; guard `openai/gpt-oss-120b`.
 
 ## Kiến trúc và failure action
 
@@ -32,8 +32,8 @@ Failure action đề xuất: guard API lỗi, timeout hoặc self-check trả r�
 không tự cho đi qua. Qdrant/LLM sinh answer lỗi thì trả thông báo lỗi thay vì answer trích đoạn. Log chỉ
 gồm id request, quyết định, tầng chặn, thời gian và model; không log nội dung người dùng chưa redact, không
 log API key. Secrets nằm trong `.env`/secret store của CI, `.env.example` chỉ có tên biến. Khi LLM của guard
-bị giới hạn quota thì phải coi là sự cố (cảnh báo), vì ở bản chạy hiện tại self-check rỗng đã khiến NeMo
-chặn nhầm toàn bộ câu sạch.
+bị giới hạn quota thì phải coi là sự cố (cảnh báo), vì ở batch đầu của Trí self-check rỗng (budget 3 token) đã khiến
+NeMo chặn nhầm 8/8 câu sạch; batch cuối đã đặt `max_tokens` 2048 và cho 8/8 câu sạch qua.
 
 ## Phạm vi và số đo latency
 
@@ -45,22 +45,22 @@ Số mẫu timed: 20; warm-up: 2; phương pháp: linear.
 
 | Layer / scope | P50 ms | P95 ms | P99 ms | Tình trạng |
 |---|---|---|---|---|
-| Presidio | 7.91 | 27.74 | 42.39 | Đo bằng Task 12, đạt rất xa mục tiêu |
-| NeMo input | 665.63 | 1458.34 | 2710.37 | Đo bằng Task 12 trên batch lỗi (xem bên dưới) |
-| Input guard sequential | 672.21 | 1464.61 | 2719.75 | Đo bằng Task 12, vượt budget 500ms |
+| Presidio | 7.62 | 9.33 | 9.96 | Đo bằng Task 12, đạt rất xa mục tiêu |
+| NeMo input | 2904.54 | 3578.42 | 4135.44 | Đo bằng Task 12, vượt budget |
+| Input guard sequential | 2913.51 | 3585.64 | 4143.63 | Đo bằng Task 12, vượt budget 500ms |
 | RAG | chưa đo | chưa đo | chưa đo | Ngoài phạm vi bắt buộc |
 | NeMo output | chưa đo | chưa đo | chưa đo | Ngoài phạm vi bắt buộc |
 | Full guard / short-circuit request | chưa đo | chưa đo | chưa đo | Không suy từ input_guard_ms |
 
-Input-layer budget target: 500ms; kết quả thực tế: P95 = 1464.61ms, `latency_budget_ok = false`.
-Nút thắt gần như hoàn toàn nằm ở NeMo input (P95 1458.34ms so với Presidio 27.74ms): mỗi lần kiểm tra là
-một lời gọi LLM qua router miễn phí của OpenRouter, nên latency phụ thuộc mạng và hàng đợi của provider.
-Cần lưu ý số này đến từ batch Phase C đầu tiên, trong đó self-check còn bị cấu hình budget 3 token và trả
-completion rỗng, nên chưa đại diện cho cấu hình đã sửa; số đo sẽ được thay khi nhóm chạy lại Phase C.
+Input-layer budget target: 500ms; kết quả thực tế: P95 = 3585.64ms, `latency_budget_ok = false` (vượt khoảng 7 lần).
+Nút thắt gần như hoàn toàn nằm ở NeMo input (P95 3578.42ms so với Presidio 9.33ms): mỗi lần kiểm tra là một lời gọi
+LLM tới Groq bằng model suy luận `gpt-oss-120b`, tốn thời gian "nghĩ" trước khi trả Yes/No, nên latency phụ thuộc mạng,
+hàng đợi của provider và giới hạn token/phút của gói miễn phí. Số này thay thế batch đầu của Trí (P95 1464.61ms,
+chạy khi self-check còn lỗi). Giữ nguyên số đo thật, không chỉnh cho đạt budget.
 Các phần chưa đo (RAG, NeMo output, full guard) giữ "chưa đo". Kế hoạch đo: chạy đủ ít nhất 20 request
 thật đi qua cả pipeline với 2 warm-up, ghi timestamp từng tầng bằng `perf_counter`, tính P50/P95/P99 tuyến
 tính trên raw samples, tách riêng request bị chặn sớm và request đi hết pipeline. Hướng giảm latency: dùng
-model nhỏ, ổn định và có SLA cho self-check; cache quyết định cho câu hỏi lặp lại; chạy Presidio và NeMo input
+model không suy luận (hoặc `reasoning_effort` thấp), nhỏ và có SLA cho self-check; cache quyết định cho câu hỏi lặp lại; chạy Presidio và NeMo input
 song song khi chấp nhận tốn thêm một lời gọi cho request có PII.
 
 ## CI gates đề xuất
@@ -92,9 +92,10 @@ Giới hạn: bộ 50/20/8/4 nhỏ, mean mỗi nhóm dao động mạnh khi đ�
 
 RAGAS mean/worst distribution: factual 0.922, adversarial 0.844, multi_hop 0.588 (nhóm yếu nhất, trung bình
 cả 50 câu là 0.773).
-Cohen’s κ: chưa có, vì Phase B chưa chạy live (chưa có artifacts/judge_results.json).
-Attacks passed: 20/20; clean false_positive_rate: 1.0 (8/8 câu sạch bị chặn nhầm trong batch Phase C đầu,
-nên kết quả 20/20 attacks chưa có giá trị kết luận).
+Cohen’s κ: 1.0 trên 10 nhãn (observed agreement 10/10, chance agreement 0.52); position inconsistency 0/5;
+verbosity rate 5/5 nhưng đọc nội dung thì phần lớn trùng với độ đúng (xem `bias_report.md`).
+Attacks passed: 18/20; clean false_positive_rate: 0.0 (8/8 câu sạch được cho qua); output cases 4/4 đúng.
+Hai attack lọt là off_topic (id 11 yêu cầu viết thơ, id 14 giải phương trình vi phân): self-check chưa coi là off-topic.
 
 Cải tiến có thể kiểm tra, gắn với bằng chứng:
 
@@ -105,7 +106,8 @@ Cải tiến có thể kiểm tra, gắn với bằng chứng:
    chỉ lấy được chunk "bản cũ đã bị thay thế" (context_recall 0.0), ID 37 thiếu chính sách phân loại dữ liệu.
 3. **Nới prompt sinh answer** để cho phép cộng/so sánh từ nhiều đoạn, chỉ từ chối khi thật sự thiếu thông tin
    (ID 23 và 26 có context_recall 1.0 nhưng vẫn từ chối).
-4. **Đặt guard LLM ổn định và fail-closed**: dùng model cố định thay router miễn phí, kiểm tra completion rỗng và
-   429 như lỗi cảnh báo thay vì chặn thầm lặng; chạy lại 8 clean controls sau mỗi lần đổi cấu hình.
+4. **Siết prompt off-topic và giảm latency của guard**: 2/20 attack off_topic lọt qua và P95 NeMo input 3.58 giây. Thêm ví dụ
+   off-topic vào prompt self-check, dùng model không suy luận; kiểm completion rỗng và 429 như lỗi cảnh báo thay vì
+   chặn thầm lặng; chạy lại 20 attacks + 8 clean controls sau mỗi lần đổi cấu hình.
 5. **Bẫy phiên bản**: thêm metadata `version`/`is_current` khi index và ưu tiên bản hiện hành khi câu hỏi hỏi
    "hiện nay"; kiểm chứng trên nhóm adversarial (hiện 0.844, ID 49 vẫn trả lời theo bản v2023).
