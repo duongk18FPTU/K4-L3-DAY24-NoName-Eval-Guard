@@ -4,7 +4,7 @@
 
 ## Tên repo và nơi nộp
 
-Repo nhóm: `K4-L3-DAY24-TenNhom-Eval-Guard`. Tên nhóm không dấu, không khoảng
+Repo nhóm: `K4-L3-DAY24-NoName-Eval-Guard`. Tên nhóm không dấu, không khoảng
 trắng, ngăn phần bằng dấu `-`. DAY24 theo tên repo nguồn; L3 trong mẫu tên chỉ
 level, không phải nhãn số bài học. Không tạo repo nộp riêng cho từng thành viên.
 
@@ -23,7 +23,7 @@ module RAG của nhóm, `artifacts/answers_50q.json` hay ba JSON kết quả tro
 TEAM và các báo cáo Markdown ban đầu là templates để nhóm tự điền.
 
 ```text
-K4-L3-DAY24-TenNhom-Eval-Guard/
+K4-L3-DAY24-NoName-Eval-Guard/
 +-- README.md
 +-- config.py
 +-- pytest.ini

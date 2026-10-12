@@ -10,7 +10,7 @@ indexing và sinh 50 answers được làm **trước buổi học**, không g�
 **Điểm:** 100 điểm bắt buộc + tối đa 10 bonus cho bài lab.
 
 **Repo đề bài:** [K4-Track-3B-Day24-Eval-Guard](https://github.com/VinUni-AI20k/K4-Track-3B-Day24-Eval-Guard).
-Repo bài nộp nhóm: `K4-L3-DAY24-TenNhom-Eval-Guard`.
+Repo bài nộp nhóm: `K4-L3-DAY24-NoName-Eval-Guard`.
 
 ## Cấu trúc repo
 
