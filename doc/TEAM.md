@@ -8,7 +8,7 @@ Trưởng nhóm/người nộp: Nguyễn Thanh Dương - 2A202602961
 
 Ngày lab/deadline áp dụng: 11:59 AM (13/10/2026) — Asia/Ho_Chi_Minh (UTC+07:00)
 
-Commit dùng để chấm: chưa chốt; SHA của commit cuối cùng được ghi ở mục "Cập nhật sau khi nộp" khi nộp bài.
+Commit dùng để chấm: `4189dab4ce94400637388f55634121e40f4ad859` (commit ngay sau đó chỉ ghi SHA này vào TEAM.md, không đổi mã hay kết quả).
 
 Mỗi nhóm nộp một repo. Điền đủ thành viên và một mục INDIVIDUAL cho từng người.
 Thêm/xóa rows để khớp nhóm thật; mẫu ba rows không ép nhóm phải có ba người.
@@ -123,6 +123,6 @@ lại phần này và các báo cáo, xác nhận mình giải thích được c
 
 ## Cập nhật sau khi nộp
 
-Chưa nộp. Khi nộp, ghi vào đây SHA của commit cuối cùng (lấy bằng `git rev-parse HEAD`) và thời điểm nộp.
-Nếu sửa sau deadline, ghi commit/thời điểm/lý do và thông báo coach cho phép áp dụng bản cập nhật; nếu
-không có cập nhật sau khi nộp thì ghi rõ "không có".
+Phiên bản nộp: commit `4189dab4ce94400637388f55634121e40f4ad859` trên nhánh `main`. Commit tiếp theo chỉ thêm SHA này vào `doc/TEAM.md`.
+Hiện chưa có cập nhật nào sau deadline. Nếu sau này có sửa sau deadline, ghi commit/thời điểm/lý do tại đây và thông báo
+coach cho phép áp dụng bản cập nhật.
