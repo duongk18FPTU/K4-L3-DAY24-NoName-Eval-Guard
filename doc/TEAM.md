@@ -6,7 +6,7 @@ Repo chung: https://github.com/duongk18FPTU/K4-L3-DAY24-NoName-Eval-Guard
 
 Trưởng nhóm/người nộp: Nguyễn Thanh Dương - 2A202602961
 
-Ngày lab/deadline áp dụng: 16:00 - 12/10/2026 — Asia/Ho_Chi_Minh (UTC+07:00)
+Ngày lab/deadline áp dụng: 11:59 AM (13/10/2026) — Asia/Ho_Chi_Minh (UTC+07:00)
 
 Commit dùng để chấm: chưa chốt; SHA của commit cuối cùng được ghi ở mục "Cập nhật sau khi nộp" khi nộp bài.
 
@@ -83,7 +83,7 @@ bản thay thế này, nhưng đó **không phải** cấu hình Annoy gốc mà
   nên RAGAS phải chạy nhiều lượt; m4 lưu cache từng câu. (c) Câu 17 và 31 luôn ra `faithfulness` NaN với
   `gemini-3.5-flash-lite` nên được chấm lại bằng `gemini-3.1-flash-lite`; 11/50 câu do model khác chấm nên điểm
   không hoàn toàn đồng nhất. (d) Không có Python 3.11 và chưa cài NeMo trên máy này. (e) Deadline trong tài liệu
-  không thống nhất (TEAM 16:00 12/10, README 11:59 13/10, ASSIGNMENT 23:59 ngày lab), cần xác nhận với coach.
+  không thống nhất (ASSIGNMENT/RULES ghi 23:59 ngày lab); nhóm áp dụng mốc 11:59 AM 13/10/2026 theo README, cần coach xác nhận.
 - Nguồn/AI hỗ trợ nếu có: Claude Code (Claude Opus 5.5 và Sonnet 5.5) đọc tài liệu, viết m1–m5 và Task 1–4, chạy
   lệnh, chẩn đoán lỗi quota/NaN và soạn nháp báo cáo. Kiểm chứng: chạy unit test, chạy Phase A thật trên dữ liệu
   thật, đối chiếu từng nhận định trong `failure_clusters.md` với contexts/answers trong `ragas_50q.json`. Tôi tự
