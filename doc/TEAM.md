@@ -1,14 +1,14 @@
 # Nhóm thực hiện K4 Track 3B
 
-Tên nhóm: {{Tên nhóm}}
+Tên nhóm: NoName
 
-Repo chung: {{Link repo}}
+Repo chung: https://github.com/duongk18FPTU/K4-L3-DAY24-NoName-Eval-Guard
 
-Trưởng nhóm/người nộp: {{Họ tên và MSSV}}
+Trưởng nhóm/người nộp: Nguyễn Thanh Dương - 2A202602961
 
-Ngày lab/deadline áp dụng: {{Ngày giờ theo thông báo lớp}} — Asia/Ho_Chi_Minh (UTC+07:00)
+Ngày lab/deadline áp dụng: 16:00 - 12/10/2026 — Asia/Ho_Chi_Minh (UTC+07:00)
 
-Commit dùng để chấm: {{Commit SHA}}
+Commit dùng để chấm: chưa chốt; SHA của commit cuối cùng được ghi ở mục "Cập nhật sau khi nộp" khi nộp bài.
 
 Mỗi nhóm nộp một repo. Điền đủ thành viên và một mục INDIVIDUAL cho từng người.
 Thêm/xóa rows để khớp nhóm thật; mẫu ba rows không ép nhóm phải có ba người.
@@ -17,21 +17,72 @@ Thêm/xóa rows để khớp nhóm thật; mẫu ba rows không ép nhóm phải
 
 | STT | Họ và tên | MSSV | Vai trò / công việc thật | Bằng chứng |
 |---|---|---|---|---|
-| 1 | {{Họ tên}} | {{MSSV}} | {{Phase/file/hàm}} | {{Commit/PR/report}} |
-| 2 | {{Họ tên}} | {{MSSV}} | {{Phase/file/hàm}} | {{Commit/PR/report}} |
-| 3 | {{Họ tên}} | {{MSSV}} | {{Phase/file/hàm}} | {{Commit/PR/report}} |
+| 1 | Nguyễn Thanh Dương | 2A202602961 | CP0: `src/m1_chunking.py` đến `m5_enrichment.py`, sinh 50 answers; Phase A (`src/phase_a_ragas.py` Task 1–4); `doc/reports/failure_clusters.md`, `blueprint.md`; tích hợp và nộp bài | Commit `3555f46`, `a39e774`, `eef8e49`, `def904a`; `artifacts/answers_50q.json`, `artifacts/ragas_50q.json` |
+| 2 | Ngô Minh Trí | 2A202602993 | Phase B (`src/phase_b_judge.py` Task 5–8) và Phase C (`src/phase_c_guard.py` Task 9a–12), `guardrails/config.yml`, `doc/reports/bias_report.md`, `guard_handoff.md` | Commit `4237d9b` (tác giả Git hiển thị là "Long Tran"); `artifacts/guard_results.json` |
 
-Người tích hợp/chạy batch/nộp link: {{Họ tên, công việc và bằng chứng}}.
+Phân công chi tiết và quyền sở hữu file nằm ở `doc/PLAN.md`.
+
+Người tích hợp/chạy batch/nộp link: Nguyễn Thanh Dương. Đã dựng pipeline RAG m1–m5, chạy
+`scripts/setup_answers.py --live` (50 answers) và `scripts/run_experiments.py --phase a --live`, đưa
+`answers_50q.json` lên `main` (commit `eef8e49`) để Trí dùng cho Phase B; sẽ chạy `scripts/check_lab.py` và gửi link nộp.
 
 ## Môi trường và chuẩn bị trước lớp
 
-OS/Python/compiler: {{Phiên bản thực tế}}.
-Virtualenv/dependencies/imports: {{Lệnh và kết quả}}.
-Models/Qdrant/50 answers đã chuẩn bị: {{Bằng chứng và giới hạn/fallback}}.
-Nếu cài full NeMo chưa thành công, ghi lỗi thực tế; không dùng unit test pass
-hoặc pip resolve để khẳng định runtime đã chạy.
+OS/Python/compiler: Windows 10 Pro 10.0.19045; Python 3.12.10 (bản 3.11 mục tiêu của lab không có trên máy);
+Docker 29.5.3; GPU NVIDIA (CUDA 13.2). Chưa kiểm tra/cài Microsoft C++ Build Tools.
+Virtualenv/dependencies/imports: `.venv` (Python 3.12) cài tập con cho CP0 + Phase A: ragas 0.1.22,
+langchain 0.2.17, langchain-core 0.2.43, langchain-openai 0.1.25, openai 1.109.1, numpy 1.26.4,
+sentence-transformers 5.7.0, qdrant-client 1.9.2, torch 2.11.0+cu128 (`torch.cuda.is_available()` = True).
+`pip check` báo "No broken requirements found". Phải hạ `pyarrow<20` (bản mới cần NumPy 2, trái pin NumPy 1.26.4)
+và `setuptools<82`. NeMo Guardrails, Annoy, Presidio và spaCy **không** được cài trong venv này (thuộc Phase C của Trí),
+nên NeMo 0.10.0 chưa được chứng minh chạy trên môi trường của Dương.
+Models/Qdrant/50 answers đã chuẩn bị: Qdrant `qdrant/qdrant:v1.9.7` chạy bằng
+`docker compose --env-file .env -f infra/docker-compose.yml up -d`; cổng 6333/6334 nằm trong dải Windows
+reserved (6297–6396) nên máy Dương map sang 16333/16334 qua biến `QDRANT_PORT`/`QDRANT_GRPC_PORT` (mặc định
+trong code vẫn là 6333). Ổ C: gần đầy (còn khoảng 3.6GB) nên cache HuggingFace/pip/tmp chuyển sang ổ D:.
+BGE-M3 và `BAAI/bge-reranker-v2-m3` tải về và chạy trên GPU; index 140 chunk từ 26 tài liệu. Hai PDF
+(`BCTC.pdf`, Nghị định 13) là bản scan không có lớp chữ nên bị bỏ qua (không OCR). 50 answers sinh bằng
+`openai/gpt-oss-20b` qua Groq, cả 50 có `generation_mode=llm` và qua `validate_answers`. LLM evaluator dùng API
+miễn phí (Groq, Gemini) vì không thanh toán được OpenAI; bị giới hạn quota nên RAGAS phải chia nhiều lượt có cache.
+Nếu cài full NeMo chưa thành công, ghi lỗi thực tế: phần NeMo của Dương chưa thử cài; kết quả cài đặt và chạy
+của Trí xem mục INDIVIDUAL của Trí và `doc/LOCAL_SETUP.md`.
 
 ## INDIVIDUAL
+
+### NguyenThanhDuong-2A202602961
+
+- Phần được giao và phần thực tế đã làm: theo `doc/PLAN.md` được giao CP0, Phase A và blueprint/nộp bài. Đã làm:
+  (1) viết mới năm module RAG vì nhóm không có code Day 18: `m1_chunking.py` (chia theo heading, parent 2048 /
+  child 256 ký tự, gắn tiêu đề tài liệu vào child), `m2_search.py` (BM25 + BGE-M3 trên Qdrant, RRF),
+  `m3_rerank.py` (cross-encoder), `m4_eval.py` (RAGAS 0.1.22 với evaluator OpenAI-compat, embedding local, cache theo
+  từng câu, tự lặp thay cho `n>1`), `m5_enrichment.py` (làm giàu theo luật, không gọi API);
+  (2) `phase_a_ragas.py`: `group_by_distribution`, `run_ragas_50q`, `bottom_10`, `cluster_analysis`;
+  (3) chạy setup 50 answers và Phase A thật, viết `failure_clusters.md` và `blueprint.md`.
+- Bằng chứng: commit `a39e774` (Phase A Task 1–4), `3555f46` (m1–m5, cấu hình env), `eef8e49` (answers),
+  `def904a` (kết quả Phase A, báo cáo lỗi, m4 cache); `artifacts/answers_50q.json`, `artifacts/ragas_50q.json`,
+  `doc/reports/failure_clusters.md`, `doc/reports/blueprint.md`, `doc/PLAN.md`.
+- Cách kiểm tra: `python -m pytest tests/test_phase_a.py -q` cho 6 passed (m4 mock); `scripts/setup_answers.py --live`
+  cho 50 answers và `validate_answers` đạt; `scripts/run_experiments.py --phase a --live` cho `ragas_50q.json` qua
+  schema và validator của runner (50 per_question, 10 bottom, matrix); smoke test retrieval thật trên Qdrant + GPU
+  với 3 câu hỏi. Kết quả: mean factual 0.922, multi_hop 0.588 (yếu nhất), adversarial 0.844.
+  `scripts/check_lab.py` chưa đạt toàn bộ vì còn thiếu `judge_results.json` và `guard_results.json` chưa đạt clean
+  controls (phần của Trí), không phải do Phase A.
+- Điều đã học: bốn metric faithfulness, answer_relevancy, context_precision, context_recall đo những thứ khác nhau
+  và không nên suy nguyên nhân trước khi đọc câu hỏi, answer, contexts. Nhãn mặc định "LLM hallucinating" của
+  `DIAGNOSTIC_TREE` sai với 8/10 câu bottom (thực tế là từ chối "Không tìm thấy" do chunk bị cắt). Matrix 20/20/10
+  chỉ là kích thước nhóm, nhóm yếu phải chọn theo mean thấp nhất. Bẫy phiên bản policy xuất hiện ngay ở retrieval
+  (top 3 chứa cả bản 2023 và 2024).
+- Giới hạn/cách xử lý: (a) lỗi chunking trong m1 của chính tôi (bộ tách câu cắt sau `:`) làm 8/50 answers là
+  "Không tìm thấy"; đã ghi rõ trong báo cáo cùng cách sửa, chưa sửa và chạy lại vì tốn quota và đổi answers mà
+  Phase B của Trí đang dùng. (b) Gemini free tier giới hạn 500 lời gọi/ngày/model và Groq giới hạn 8k token/phút
+  nên RAGAS phải chạy nhiều lượt; m4 lưu cache từng câu. (c) Câu 17 và 31 luôn ra `faithfulness` NaN với
+  `gemini-3.5-flash-lite` nên được chấm lại bằng `gemini-3.1-flash-lite`; 11/50 câu do model khác chấm nên điểm
+  không hoàn toàn đồng nhất. (d) Không có Python 3.11 và chưa cài NeMo trên máy này. (e) Deadline trong tài liệu
+  không thống nhất (TEAM 16:00 12/10, README 11:59 13/10, ASSIGNMENT 23:59 ngày lab), cần xác nhận với coach.
+- Nguồn/AI hỗ trợ nếu có: Claude Code (Claude Opus 5.5 và Sonnet 5.5) đọc tài liệu, viết m1–m5 và Task 1–4, chạy
+  lệnh, chẩn đoán lỗi quota/NaN và soạn nháp báo cáo. Kiểm chứng: chạy unit test, chạy Phase A thật trên dữ liệu
+  thật, đối chiếu từng nhận định trong `failure_clusters.md` với contexts/answers trong `ragas_50q.json`. Tôi tự
+  review và chịu trách nhiệm với phần này; phần của Trí do Trí tự kê khai.
 
 ### NgoMinhTri-2A202602993
 
@@ -55,18 +106,8 @@ hoặc pip resolve để khẳng định runtime đã chạy.
 - AI hỗ trợ: Codex đọc tài liệu, cài môi trường, implement code B/C và chạy kiểm tra.
   Kiểm tra Presidio dùng engine thật, Phase C gọi API live. Thành viên cần tự review và giải thích code.
 
-Sao chép mẫu cho mỗi thành viên; tiêu đề họ tên không dấu-MSSV.
-
-### {{HoVaTen}}-{{MSSV}}
-
-- Phần được giao và phần thực tế đã làm: {{Nhiệm vụ, file/hàm, mục đích}}.
-- Bằng chứng: {{Commit/PR và artifacts/reports liên quan}}.
-- Cách kiểm tra: {{Lệnh và kết quả kiểm tra thực tế}}.
-- Điều đã học: {{Khái niệm và cách thể hiện trong bài}}.
-- Giới hạn/cách xử lý: {{Vấn đề và kiểm chứng}}.
-- Nguồn/AI hỗ trợ nếu có: {{Công cụ, phạm vi, cách tự kiểm chứng}}.
-
 ## Cập nhật sau khi nộp
 
-{{Ghi phiên bản nộp; nếu sửa sau deadline, ghi commit/thời điểm/lý do và thông báo
-coach cho phép áp dụng bản cập nhật. Nếu không có cập nhật, ghi rõ không có.}}
+Chưa nộp. Khi nộp, ghi vào đây SHA của commit cuối cùng (lấy bằng `git rev-parse HEAD`) và thời điểm nộp.
+Nếu sửa sau deadline, ghi commit/thời điểm/lý do và thông báo coach cho phép áp dụng bản cập nhật; nếu
+không có cập nhật sau khi nộp thì ghi rõ "không có".
